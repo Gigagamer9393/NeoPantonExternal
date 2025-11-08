@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NeoPhanton External — Cyberpunk Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050507;
+  --panel: rgba(255,255,255,0.03);
+  --neon: #00FF66;
+  --neon-strong: #00ff99;
+  --muted: #9aa;
+  --danger: #ff5a5a;
+  --glass: rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:"Orbitron",sans-serif;background:linear-gradient(180deg,#020204,#060608 60%);color:#e6ffe8; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+@keyframes glowText { 0%{text-shadow:0 0 8px var(--neon),0 0 18px rgba(0,255,102,0.15)} 50%{text-shadow:0 0 18px var(--neon),0 0 36px rgba(0,255,102,0.25)} 100%{text-shadow:0 0 8px var(--neon)} }
+@keyframes blinkCursor { 0%{opacity:1}50%{opacity:.2}100%{opacity:1} }
+#toast{
+  position:fixed; left:50%; transform:translateX(-50%); top:18px;
+  background:rgba(0,0,0,0.65); padding:10px 18px; border-radius:10px; color:var(--neon);
+  box-shadow:0 0 24px rgba(0,255,102,0.08); z-index:9999; display:none; font-weight:700;
+}
+/* Container & Panels */
+.container{ min-height:100vh; display:flex; align-items:center; justify-content:center; gap:28px; padding:36px; }
+.auth-panel{ width:420px; max-width:92%; border-radius:16px; padding:22px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(0,255,102,0.06); box-shadow: 0 10px 80px rgba(0,255,102,0.02); position:relative; overflow:hidden; }
+.holo-header{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.logo-dot{width:12px;height:12px;border-radius:50%;background:var(--neon);box-shadow:0 0 12px var(--neon);}
+.holo-title{font-size:20px;color:var(--neon); animation:glowText 2.4s infinite alternate;}
+.holo-sub{font-size:12px;color:var(--muted); margin-top:4px}
+.tab-row{display:flex; gap:8px; margin:10px 0 6px}
+.tab{flex:1; padding:10px 10px; border-radius:10px; text-align:center; cursor:pointer; color:#dfe; font-weight:700; font-size:13px; border:1px solid transparent}
+.tab.active{ background:linear-gradient(90deg, rgba(0,255,102,0.06), rgba(0,255,102,0.02)); border:1px solid rgba(0,255,102,0.12); color:var(--neon); box-shadow:0 6px 30px rgba(0,255,102,0.03)}
+.form-row{display:flex;flex-direction:column; gap:10px; margin-top:6px}
+.input{ padding:12px 14px; border-radius:10px; background: rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); color:#e9ffea; outline:none; font-size:14px; transition:box-shadow .18s, border-color .18s;}
+.input:focus{ box-shadow:0 0 18px rgba(0,255,102,0.08); border-color: rgba(0,255,102,0.14); }
+.input::placeholder{ color: rgba(255,255,255,0.35); font-weight:600 }
+.btn{ margin-top:8px; width:100%; padding:12px; border-radius:12px; border:none; cursor:pointer; font-weight:900; background:linear-gradient(90deg,var(--neon), #7fff88); color:#001; box-shadow:0 10px 40px rgba(0,255,102,0.06); }
+.small{ padding:8px 12px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--neon); cursor:pointer }
+.note{ margin-top:10px; font-size:12px; color:var(--muted) }
+/* Preview / Main */
+.preview{ width:860px; max-width:92%; min-height:520px; position:relative; border-radius:18px; padding:18px; background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(255,255,255,0.02)); border:1px solid rgba(0,255,102,0.04); box-shadow:0 40px 140px rgba(0,255,102,0.02); display:none; }
+.grid{ position:fixed; inset:0; z-index:-3; opacity:0.25; pointer-events:none; background: repeating-linear-gradient(0deg,#003300 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg,#003300 0 1px, transparent 1px 24px); animation: gridMove 14s linear infinite;}
+@keyframes gridMove{0%{background-position:0 0,0 0}100%{background-position:-220px -220px,-220px -220px}}
+.header{ display:flex; justify-content:space-between; align-items:center; gap:14px }
+.title{ color:var(--neon); font-size:26px; font-weight:900; text-shadow:0 0 10px rgba(0,255,102,0.06) }
+.user-controls{ display:flex; gap:12px; align-items:center }
+.card-wrap{ margin-top:18px; display:flex; justify-content:center; align-items:center; position:relative }
+.card{ width:100%; max-width:980px; border-radius:14px; padding:18px; position:relative; background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(255,255,255,0.01)); border:2px solid rgba(0,255,102,0.06); overflow:visible; }
+.card-viewport{ display:flex; justify-content:center; align-items:center; width:100%; }
+.card img{ width:100%; height:auto; max-height:720px; border-radius:10px; display:block; transition:transform .5s, box-shadow .4s }
+.card-anim{ animation: floatUpDown 3.6s ease-in-out infinite; transform-origin:center }
+@keyframes floatUpDown{0%{transform:translateY(0)}50%{transform:translateY(-22px)}100%{transform:translateY(0)}}
+.neon-frame{ position:absolute; inset:12px; border-radius:12px; pointer-events:none }
+.scan-line{ position:absolute; left:-15%; width:130%; height:2px; background:linear-gradient(90deg, transparent, rgba(0,255,102,0.9), transparent); opacity:0.9; filter:blur(6px); transform:translateY(-36px) }
+.scan-line.l1{ animation: scan 4s linear infinite }
+.scan-line.l2{ animation: scan 4.8s linear infinite reverse; top:30% }
+.scan-line.l3{ animation: scan 5.4s linear infinite; top:60% }
+@keyframes scan{ 0%{transform:translateY(-20%)}100%{transform:translateY(120%)}}
+.corner-glow{ position:absolute; width:24%; height:24%; pointer-events:none }
+.corner-glow.tl{ left:-6%; top:-6%; background: radial-gradient(circle at 10% 10%, rgba(0,255,102,0.22), transparent 25%); animation: glowPulse 3s infinite }
+.corner-glow.br{ right:-6%; bottom:-6%; background: radial-gradient(circle at 90% 90%, rgba(0,255,102,0.18), transparent 30%); animation: glowPulse 3.6s infinite }
+@keyframes glowPulse{0%{opacity:0.5; transform:scale(.98)}50%{opacity:1; transform:scale(1.02)}100%{opacity:0.5; transform:scale(.98)}}
+.overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .25s }
+.card:hover .overlay{ opacity:1 }
+.dl{ background:linear-gradient(90deg,#00ff88,#00ff00); border-radius:20px; padding:14px 30px; font-weight:900; color:#001; box-shadow:0 20px 60px rgba(0,255,102,0.12) }
+.features{ position:absolute; bottom:18px; left:50%; transform:translateX(-50%); color:var(--neon); text-align:center; font-size:15px }
+.links{ display:flex; gap:18px; justify-content:center; margin-top:18px }
+.links a{ color:var(--neon); text-decoration:none; font-weight:800; padding:8px 14px; border-radius:10px; border:1px solid rgba(0,255,102,0.06) }
+/* Undetected Display */
+.undetected{ position:fixed; top:18px; right:18px; z-index:100; display:flex; gap:10px; align-items:center; padding:8px 12px; border-radius:12px; background:rgba(0,0,0,0.45); border:1px solid rgba(0,255,102,0.06) }
+.ud-dot{ width:14px; height:14px; border-radius:50%; background:var(--neon); box-shadow:0 0 12px var(--neon); animation: pulseGreen 1.6s infinite alternate }
+@keyframes pulseGreen{0%{transform:scale(1);opacity:.75}50%{transform:scale(1.5);opacity:1}100%{transform:scale(1);opacity:.75}}
+.access-screen{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at center, rgba(0,255,102,0.06), rgba(0,0,0,0.9)); z-index:9998; opacity:0; pointer-events:none; transition:opacity .4s; }
+.access-screen.show{ opacity:1; pointer-events:auto }
+.access-box{ background:linear-gradient(180deg, rgba(0,0,0,0.5), rgba(255,255,255,0.02)); padding:28px 38px; border-radius:12px; border:1px solid rgba(0,255,102,0.1); box-shadow: 0 40px 120px rgba(0,255,102,0.06); text-align:center}
+.access-box h2{ color:var(--neon); font-size:34px; margin:0 0 10px; letter-spacing:2px; text-shadow:0 0 18px rgba(0,255,102,0.12) }
+.access-box p{ margin:0; color:#dfffdc }
+@media(max-width:1100px){ .preview{ display:block; } .container{flex-direction:column; align-items:stretch} .preview{order:2} .auth-panel{order:1} }
+@media(max-width:700px){ .auth-panel{ width:92% } .card img{ max-height:460px } h1{ font-size:26px } }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div id="accessScreen" class="access-screen" aria-hidden="true">
+  <div class="access-box">
+    <h2>ACCESS GRANTED</h2>
+    <p>Willkommen — lade die Oberfläche...</p>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Auth Panel -->
+  <div class="auth-panel" id="authPanel">
+    <div class="holo-header">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="holo-title">NeoPhanton External</div>
+        <div class="holo-sub">Secure cyber-access terminal</div>
+      </div>
+    </div>
+
+    <div class="tab-row">
+      <div class="tab active" data-tab="login">LOGIN</div>
+      <div class="tab" data-tab="signup">REGISTRIEREN</div>
+      <div class="tab" data-tab="reset">PASSWORT</div>
+    </div>
+
+    <div id="loginForm" class="form-row">
+      <input id="loginEmail" class="input" placeholder="E-Mail" type="email" />
+      <input id="loginPass" class="input" placeholder="Passwort" type="password" />
+      <button id="btnLogin" class="btn">ANMELDEN</button>
+      <div class="quick-row">
+        <span class="link-like" id="gotoSignup">Noch kein Konto?</span>
+        <span class="link-like" id="gotoReset">Passwort vergessen?</span>
+      </div>
+      <div id="loginStatus" class="note"></div>
+    </div>
+
+    <div id="signupForm" class="form-row" style="display:none">
+      <input id="regEmail" class="input" placeholder="E-Mail" type="email" />
+      <input id="regPass" class="input" placeholder="Passwort (min. 6 Zeichen)" type="password" />
+      <input id="regPass2" class="input" placeholder="Passwort wiederholen" type="password" />
+      <button id="btnSignup" class="btn">REGISTRIEREN</button>
+      <div class="quick-row">
+        <span class="link-like" id="gotoLogin">Zurück zum Login</span>
+      </div>
+      <div id="signupStatus" class="note"></div>
+    </div>
+
+    <div id="resetForm" class="form-row" style="display:none">
+      <input id="resetEmail" class="input" placeholder="E-Mail zum Zurücksetzen" type="email" />
+      <button id="btnReset" class="btn">PASSWORT ZURÜCKSETZEN</button>
+      <div class="quick-row">
+        <span class="link-like" id="gotoLogin2">Zurück zum Login</span>
+      </div>
+      <div id="resetStatus" class="note"></div>
+    </div>
+
+    <div class="note" style="margin-top:12px">Hinweis: Bitte verwende eine gültige E-Mail. Ein Verifizierungslink wird gesendet.</div>
+  </div>
+
+  <!-- Preview / Main -->
+  <div class="preview" id="mainPreview" style="display:none">
+    <div class="grid"></div>
+
+    <div class="header">
+      <div>
+        <div class="title">NeoPhanton External</div>
+        <div style="font-size:12px;color:var(--muted)">Authentication Active</div>
+      </div>
+      <div class="user-controls">
+        <div id="userEmail" style="font-weight:800;color:var(--neon)"></div>
+        <button id="btnSignOut" class="small">Abmelden</button>
+      </div>
+    </div>
+
+    <div class="card-wrap">
+      <div class="card card-anim">
+        <div class="card-viewport">
+          <img id="mainImage" src="NeonPhanton.jpg" alt="NeoPhanton">
+        </div>
+        <div class="neon-frame" aria-hidden="true">
+          <div class="scan-line l1"></div>
+          <div class="scan-line l2"></div>
+          <div class="scan-line l3"></div>
+          <div class="corner-glow tl"></div>
+          <div class="corner-glow br"></div>
+        </div>
+        <div class="overlay"><button class="dl" onclick="downloadFile()">DOWNLOAD</button></div>
+        <div class="features">
+          <strong>Features:</strong><br>
+          ✔ Crosshair & Bounding Box &nbsp; ✔ Auto Center Mouse<br>
+          ✔ Pose & Face Tracking &nbsp; ✔ Neon Pulse & YOLO Detection
+        </div>
+      </div>
+    </div>
+
+    <div class="links">
+      <a id="discordLink" href="https://discord.gg/YOURDISCORD" target="_blank">Discord</a>
+      <a id="ytLink" href="https://youtube.com/YOURCHANNEL" target="_blank">YouTube</a>
+    </div>
+  </div>
+</div>
+
+<!-- Undetected -->
+<div class="undetected" id="udDetect">
+  <div class="ud-dot" id="udDot"></div>
+  <div id="udText" style="font-weight:800;color:var(--neon)">Undetected: ACTIVE</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA_-CKZliZyJoC7GrerVprjJoPHDxEFw1A",
+  authDomain: "nequisai.firebaseapp.com",
+  projectId: "nequisai",
+  storageBucket: "nequisai.firebasestorage.app",
+  messagingSenderId: "631858054251",
+  appId: "1:631858054251:web:54744f382e6f2d40f1dd2e",
+  measurementId: "G-9888Y0RM2K"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function showToast(msg, color = '--neon') {
+  const t = document.getElementById('toast');
+  t.style.display = 'block';
+  t.style.color = (color==='--neon'? 'var(--neon)' : color);
+  t.textContent = msg;
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>{ t.style.display='none'; }, 3800);
+}
+function setText(id, txt, color){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = txt;
+  if(color) el.style.color = color;
+}
+function readableError(error) {
+  const code = error && (error.code || error.message) ? (error.code || error.message) : '';
+  const map = {
+    "auth/email-already-in-use":"Diese E-Mail ist bereits registriert.",
+    "auth/invalid-email":"Bitte gib eine gültige E-Mail-Adresse ein.",
+    "auth/weak-password":"Das Passwort muss mindestens 6 Zeichen haben.",
+    "auth/user-not-found":"Kein Account mit dieser E-Mail gefunden.",
+    "auth/wrong-password":"Falsches Passwort.",
+    "auth/too-many-requests":"Zu viele Versuche — bitte später erneut versuchen.",
+    "auth/missing-password":"Bitte gib ein Passwort ein.",
+    "auth/network-request-failed":"Netzwerkfehler — überprüfe deine Verbindung.",
+  };
+  if(typeof code === 'string'){
+    for(const k in map) if(code.indexOf(k)!==-1) return map[k];
+  }
+  if(error && error.message) {
+    let m = error.message.replace('Firebase: ','').replace(/\(auth\/[^\)]+\)/,'').trim();
+    return m;
+  }
+  return "Ein unbekannter Fehler ist aufgetreten.";
+}
+
+/* -------------------- Tab Controls -------------------- */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=> {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    document.getElementById('loginForm').style.display = which==='login'? 'flex':'none';
+    document.getElementById('signupForm').style.display = which==='signup'? 'flex':'none';
+    document.getElementById('resetForm').style.display = which==='reset'? 'flex':'none';
+    setText('loginStatus',''); setText('signupStatus',''); setText('resetStatus','');
+  });
+});
+document.getElementById('gotoSignup').addEventListener('click', ()=>document.querySelector('[data-tab="signup"]').click());
+document.getElementById('gotoLogin').addEventListener('click', ()=>document.querySelector('[data-tab="login"]').click());
+document.getElementById('gotoLogin2').addEventListener('click', ()=>document.querySelector('[data-tab="login"]').click());
+document.getElementById('gotoReset').addEventListener('click', ()=>document.querySelector('[data-tab="reset"]').click());
+
+/* -------------------- Auth Functions -------------------- */
+document.getElementById('btnSignup').addEventListener('click', async ()=>{
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  if(!email || !pass){ setText('signupStatus','Bitte E-Mail & Passwort eingeben.', '--neon'); return; }
+  if(pass.length < 6){ setText('signupStatus','Das Passwort muss mindestens 6 Zeichen haben.'); return; }
+  if(pass !== pass2){ setText('signupStatus','Passwörter stimmen nicht überein.'); return; }
+  setText('signupStatus','Registrierung läuft...');
+  try{
+    const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+    await userCred.user.sendEmailVerification();
+    setText('signupStatus','✅ Registrierung erfolgreich — prüfe deine E-Mails zur Verifizierung.', 'var(--neon)');
+    document.querySelector('[data-tab="login"]').click();
+  }catch(err){
+    setText('signupStatus','❌ '+ readableError(err), 'var(--danger)');
+  }
+});
+
+document.getElementById('btnLogin').addEventListener('click', async ()=>{
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email || !pass){ setText('loginStatus','Bitte E-Mail & Passwort eingeben.'); return; }
+  setText('loginStatus','Anmeldung...');
+  try{
+    const uc = await auth.signInWithEmailAndPassword(email, pass);
+    if(!uc.user.emailVerified){
+      setText('loginStatus','E-Mail nicht verifiziert. Bitte bestätige deine E-Mail.', 'var(--danger)');
+      showToast('E-Mail nicht verifiziert — Link wurde gesendet (bei Registrierung).');
+    }else{
+      setText('loginStatus','✅ Angemeldet! Lade Oberfläche...', 'var(--neon)');
+      showAccessScreen();
+    }
+  }catch(err){
+    setText('loginStatus','❌ '+ readableError(err), 'var(--danger)');
+  }
+});
+
+document.getElementById('btnReset').addEventListener('click', async ()=>{
+  const email = document.getElementById('resetEmail').value.trim();
+  if(!email){ setText('resetStatus','Bitte E-Mail eingeben.'); return; }
+  setText('resetStatus','E-Mail wird gesendet...');
+  try{
+    await auth.sendPasswordResetEmail(email);
+    setText('resetStatus','📧 Passwort-Reset E-Mail wurde gesendet.', 'var(--neon)');
+    document.querySelector('[data-tab="login"]').click();
+  }catch(err){
+    setText('resetStatus','❌ '+ readableError(err), 'var(--danger)');
+  }
+});
+
+document.getElementById('btnSignOut').addEventListener('click', async ()=>{
+  await auth.signOut();
+  showToast('Abgemeldet', '--neon');
+});
+
+/* -------------------- Auth State -------------------- */
+auth.onAuthStateChanged(user => {
+  const authPanel = document.getElementById('authPanel');
+  const mainPreview = document.getElementById('mainPreview');
+  const ud = document.getElementById('udDetect');
+  if(user){
+    document.getElementById('userEmail').textContent = user.email + (user.emailVerified? '' : ' (User is Regis)');
+    authPanel.style.display = 'none';
+    mainPreview.style.display = 'block';
+    ud.style.display = 'flex';
+    startUndetected();
+  }else{
+    authPanel.style.display = 'block';
+    mainPreview.style.display = 'none';
+    ud.style.display = 'none';
+    stopUndetected();
+  }
+});
+
+/* -------------------- Undetected -------------------- */
+let udInterval = null;
+function startUndetected(){
+  const dot = document.getElementById('udDot');
+  const text = document.getElementById('udText');
+  if(udInterval) clearInterval(udInterval);
+  dot.style.boxShadow = '0 0 12px var(--neon), 0 0 22px var(--neon)';
+  text.textContent = 'Undetected: ACTIVE';
+  udInterval = setInterval(()=> {
+    dot.style.transform = 'scale(1.6)';
+    setTimeout(()=> dot.style.transform = 'scale(1)', 350);
+  }, 1800);
+}
+function stopUndetected(){
+  const dot = document.getElementById('udDot');
+  const text = document.getElementById('udText');
+  if(udInterval) clearInterval(udInterval);
+  dot.style.boxShadow = '0 0 6px rgba(0,255,102,0.4)';
+  dot.style.transform = 'scale(1)';
+  text.textContent = 'Undetected: OFFLINE';
+}
+
+/* -------------------- Download & Access -------------------- */
+function downloadFile(){
+  const link = document.createElement('a');
+  link.href = 'NeoPhantonExternal.zip';
+  link.download = 'NeoPhantonExternal.zip';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Download gestartet', '--neon');
+}
+
+function showAccessScreen(){
+  const scr = document.getElementById('accessScreen');
+  scr.classList.add('show');
+  setTimeout(()=>{ scr.classList.remove('show'); document.getElementById('accessScreen').style.pointerEvents='none'; }, 2400);
+}
+</script>
+</body>
+</html>
