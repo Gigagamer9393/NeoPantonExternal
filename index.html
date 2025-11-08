@@ -362,13 +362,14 @@ function stopUndetected(){
 /* -------------------- Download & Access -------------------- */
 function downloadFile(){
   const link = document.createElement('a');
-  link.href = 'NeoPhantonExternal.zip';
+  link.href = 'https://example.com/downloads/NeoPhantonExternal.zip'; // Absolute URL
   link.download = 'NeoPhantonExternal.zip';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   showToast('Download gestartet', '--neon');
 }
+
 
 function showAccessScreen(){
   const scr = document.getElementById('accessScreen');
@@ -378,4 +379,5 @@ function showAccessScreen(){
 </script>
 </body>
 </html>
+
 
